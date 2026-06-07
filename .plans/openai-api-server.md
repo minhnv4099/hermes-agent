@@ -18,7 +18,7 @@ usable as a backend for all of them — no custom adapters needed.
 │  AnythingLLM     │  │    {"messages": [...]}             │  hermes-agent   │
 │  NextChat        │  │                                    │  gateway        │
 │  Any OAI client  │──┘    ◄── SSE streaming response      │  (API server)   │
-└──────────────────┘                                        └─────────────────┘
+└──────────────────┘                                       └─────────────────┘
 ```
 
 A user would:

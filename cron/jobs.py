@@ -34,13 +34,13 @@ except ImportError:
 
 HERMES_DIR = get_hermes_home().resolve()
 CRON_DIR = HERMES_DIR / "cron"
+OUTPUT_DIR = CRON_DIR / "output"
 JOBS_FILE = CRON_DIR / "jobs.json"
 
 # In-process lock protecting load_jobs→modify→save_jobs cycles.
 # Required when tick() runs jobs in parallel threads — without this,
 # concurrent mark_job_run / advance_next_run calls can clobber each other.
 _jobs_file_lock = threading.Lock()
-OUTPUT_DIR = CRON_DIR / "output"
 ONESHOT_GRACE_SECONDS = 120
 
 
@@ -556,14 +556,13 @@ def update_job(job_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]
                 updates["workdir"] = _normalize_workdir(_wd)
 
         updated = _apply_skill_fields({**job, **updates})
-        schedule_changed = "schedule" in updates
 
         if "skills" in updates or "skill" in updates:
             normalized_skills = _normalize_skill_list(updated.get("skill"), updated.get("skills"))
             updated["skills"] = normalized_skills
             updated["skill"] = normalized_skills[0] if normalized_skills else None
 
-        if schedule_changed:
+        if "schedule" in updates:
             updated_schedule = updated["schedule"]
             # The API may pass schedule as a raw string (e.g. "every 10m")
             # instead of a pre-parsed dict.  Normalize it the same way

@@ -42,8 +42,7 @@ _worker_thread_local = threading.local()  # per-worker-thread persistent loops
 
 
 def _get_tool_loop():
-    """Return a long-lived event loop for running async tool handlers.
-
+    """Return a long-lived event loop for running async tool handlers.\
     Using a persistent loop (instead of asyncio.run() which creates and
     *closes* a fresh loop every time) prevents "Event loop is closed"
     errors that occur when cached httpx/AsyncOpenAI clients attempt to
@@ -652,3 +651,9 @@ def check_toolset_requirements() -> Dict[str, bool]:
 def check_tool_availability(quiet: bool = False) -> Tuple[List[str], List[dict]]:
     """Return (available_toolsets, unavailable_info)."""
     return registry.check_tool_availability(quiet=quiet)
+
+
+if __name__ == "__main__":
+    tool_definitions = get_tool_definitions()
+    from json import dumps
+    print(dumps(tool_definitions, indent=2, ensure_ascii=True))

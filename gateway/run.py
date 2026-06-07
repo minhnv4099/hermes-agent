@@ -10921,6 +10921,7 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
         terminate_pid,
     )
     existing_pid = get_running_pid()
+
     if existing_pid is not None and existing_pid != os.getpid():
         if replace:
             existing_start_time = get_process_start_time(existing_pid)

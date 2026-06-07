@@ -43,8 +43,8 @@ _session_context = threading.local()
 # Default log format — includes timestamp, level, optional session tag,
 # logger name, and message.  The ``%(session_tag)s`` field is guaranteed to
 # exist on every LogRecord via _install_session_record_factory() below.
-_LOG_FORMAT = "%(asctime)s %(levelname)s%(session_tag)s %(name)s: %(message)s"
-_LOG_FORMAT_VERBOSE = "%(asctime)s - %(name)s - %(levelname)s%(session_tag)s - %(message)s"
+_LOG_FORMAT = "%(asctime)s %(levelname)s%(session_tag)s %(name)s: %(message)s #%(lineno)d"
+_LOG_FORMAT_VERBOSE = "%(asctime)s - %(name)s - %(levelname)s%(session_tag)s - %(message)s #%(lineno)d"
 
 # Third-party loggers that are noisy at DEBUG/INFO level.
 _NOISY_LOGGERS = (

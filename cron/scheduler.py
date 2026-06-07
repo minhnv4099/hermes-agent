@@ -16,6 +16,7 @@ import logging
 import os
 import subprocess
 import sys
+from concurrent.futures import Future
 
 # fcntl is Unix-only; on Windows use msvcrt for file locking
 try:
@@ -970,7 +971,7 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
         # env passthrough registrations) when the cron run hops into the worker
         # thread used for inactivity timeout monitoring.
         _cron_context = contextvars.copy_context()
-        _cron_future = _cron_pool.submit(_cron_context.run, agent.run_conversation, prompt)
+        _cron_future: Future = _cron_pool.submit(_cron_context.run, agent.run_conversation, prompt)
         _inactivity_timeout = False
         try:
             if _cron_inactivity_limit is None:

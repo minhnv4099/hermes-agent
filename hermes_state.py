@@ -1501,6 +1501,24 @@ class SessionDB:
             return True
         return self._execute_write(_do)
 
+    def clearup_sessions(self, source: None | str = None):
+        """Delete a session and all its messages from a source if provided, all sources otherwise"""
+        def _do(conn):
+            if source:
+                cursor = conn.execute("SELECT * FROM sessions WHERE source = ?", (source, ))
+            else:
+                cursor = conn.execute("SELECT * FROM sessions", ())
+
+            session_ids = set(row['id'] for row in cursor.fetchall())
+
+            for sid in session_ids:
+                conn.execute("DELETE FROM messages WHERE session_id = ?", (sid,))
+                conn.execute("DELETE FROM sessions WHERE id = ?", (sid,))
+
+            return len(session_ids)
+
+        return self._execute_write(_do)
+
     def prune_sessions(self, older_than_days: int = 90, source: str = None) -> int:
         """Delete sessions older than N days. Returns count of deleted sessions.
 

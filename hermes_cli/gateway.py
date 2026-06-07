@@ -2340,9 +2340,9 @@ def run_gateway(verbose: int = 0, quiet: bool = False, replace: bool = False):
     from gateway.run import start_gateway
     
     print("┌─────────────────────────────────────────────────────────┐")
-    print("│           ⚕ Hermes Gateway Starting...                 │")
+    print("│           ⚕ Hermes Gateway Starting...                  │")
     print("├─────────────────────────────────────────────────────────┤")
-    print("│  Messaging platforms + cron scheduler                    │")
+    print("│  Messaging platforms + cron scheduler                   │")
     print("│  Press Ctrl+C to stop                                   │")
     print("└─────────────────────────────────────────────────────────┘")
     print()
@@ -3108,57 +3108,6 @@ def _setup_wecom():
     print_success("💬 WeCom configured!")
 
 
-def _is_service_installed() -> bool:
-    """Check if the gateway is installed as a system service."""
-    if supports_systemd_services():
-        return get_systemd_unit_path(system=False).exists() or get_systemd_unit_path(system=True).exists()
-    elif is_macos():
-        return get_launchd_plist_path().exists()
-    return False
-
-
-def _is_service_running() -> bool:
-    """Check if the gateway service is currently running."""
-    if supports_systemd_services():
-        user_unit_exists = get_systemd_unit_path(system=False).exists()
-        system_unit_exists = get_systemd_unit_path(system=True).exists()
-
-        if user_unit_exists:
-            try:
-                result = _run_systemctl(
-                    ["is-active", get_service_name()],
-                    system=False, capture_output=True, text=True, timeout=10,
-                )
-                if result.stdout.strip() == "active":
-                    return True
-            except (RuntimeError, subprocess.TimeoutExpired):
-                pass
-
-        if system_unit_exists:
-            try:
-                result = _run_systemctl(
-                    ["is-active", get_service_name()],
-                    system=True, capture_output=True, text=True, timeout=10,
-                )
-                if result.stdout.strip() == "active":
-                    return True
-            except (RuntimeError, subprocess.TimeoutExpired):
-                pass
-
-        return False
-    elif is_macos() and get_launchd_plist_path().exists():
-        try:
-            result = subprocess.run(
-                ["launchctl", "list", get_launchd_label()],
-                capture_output=True, text=True, timeout=10,
-            )
-            return result.returncode == 0
-        except subprocess.TimeoutExpired:
-            return False
-    # Check for manual processes
-    return len(find_gateway_pids()) > 0
-
-
 def _setup_weixin():
     """Interactive setup for Weixin / WeChat personal accounts."""
     print()
@@ -3680,6 +3629,57 @@ def _setup_signal():
     print_info(f"  Account: {account}")
     print_info("  DM auth: via SIGNAL_ALLOWED_USERS + DM pairing")
     print_info(f"  Groups: {'enabled' if get_env_value('SIGNAL_GROUP_ALLOWED_USERS') else 'disabled'}")
+
+
+def _is_service_installed() -> bool:
+    """Check if the gateway is installed as a system service."""
+    if supports_systemd_services():
+        return get_systemd_unit_path(system=False).exists() or get_systemd_unit_path(system=True).exists()
+    elif is_macos():
+        return get_launchd_plist_path().exists()
+    return False
+
+
+def _is_service_running() -> bool:
+    """Check if the gateway service is currently running."""
+    if supports_systemd_services():
+        user_unit_exists = get_systemd_unit_path(system=False).exists()
+        system_unit_exists = get_systemd_unit_path(system=True).exists()
+
+        if user_unit_exists:
+            try:
+                result = _run_systemctl(
+                    ["is-active", get_service_name()],
+                    system=False, capture_output=True, text=True, timeout=10,
+                )
+                if result.stdout.strip() == "active":
+                    return True
+            except (RuntimeError, subprocess.TimeoutExpired):
+                pass
+
+        if system_unit_exists:
+            try:
+                result = _run_systemctl(
+                    ["is-active", get_service_name()],
+                    system=True, capture_output=True, text=True, timeout=10,
+                )
+                if result.stdout.strip() == "active":
+                    return True
+            except (RuntimeError, subprocess.TimeoutExpired):
+                pass
+
+        return False
+    elif is_macos() and get_launchd_plist_path().exists():
+        try:
+            result = subprocess.run(
+                ["launchctl", "list", get_launchd_label()],
+                capture_output=True, text=True, timeout=10,
+            )
+            return result.returncode == 0
+        except subprocess.TimeoutExpired:
+            return False
+    # Check for manual processes
+    return len(find_gateway_pids()) > 0
 
 
 def gateway_setup():

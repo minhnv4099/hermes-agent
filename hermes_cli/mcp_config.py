@@ -14,6 +14,7 @@ import os
 import re
 import time
 from typing import Any, Dict, List, Optional, Tuple
+import argparse
 
 from hermes_cli.config import (
     load_config,
@@ -220,7 +221,7 @@ def cmd_mcp_add(args):
     """Add a new MCP server with discovery-first tool selection."""
     name = args.name
     url = getattr(args, "url", None)
-    command = getattr(args, "command", None)
+    command = getattr(args, "cmd", None)
     cmd_args = getattr(args, "args", None) or []
     auth_type = getattr(args, "auth", None)
     preset_name = getattr(args, "preset", None)
@@ -775,3 +776,76 @@ def mcp_command(args):
         _info("hermes mcp configure <name>                   Toggle tools")
         _info("hermes mcp login <name>                       Re-authenticate OAuth")
         print()
+
+
+def main():
+    parser = argparse.ArgumentParser()
+
+    subparsers = parser.add_subparsers(dest="command", help="Command to run")
+
+    mcp_parser = subparsers.add_parser(
+        "mcp",
+        help="Manage MCP servers and run Hermes as an MCP server",
+        description=(
+            "Manage MCP server connections and run Hermes as an MCP server.\n\n"
+            "MCP servers provide additional tools via the Model Context Protocol.\n"
+            "Use 'hermes mcp add' to connect to a new server, or\n"
+            "'hermes mcp serve' to expose Hermes conversations over MCP."
+        ),
+    )
+    mcp_sub = mcp_parser.add_subparsers(dest="mcp_action")
+
+    mcp_serve_p = mcp_sub.add_parser(
+        "serve",
+        help="Run Hermes as an MCP server (expose conversations to other agents)",
+    )
+    mcp_serve_p.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Enable verbose logging on stderr",
+    )
+
+    mcp_add_p = mcp_sub.add_parser(
+        "add", help="Add an MCP server (discovery-first install)"
+    )
+    mcp_add_p.add_argument("name", help="Server name (used as config key)")
+    mcp_add_p.add_argument("--url", help="HTTP/SSE endpoint URL")
+    mcp_add_p.add_argument("--command", help="Stdio command (e.g. npx)")
+    mcp_add_p.add_argument(
+        "--args", nargs="*", default=[], help="Arguments for stdio command"
+    )
+    mcp_add_p.add_argument("--auth", choices=["oauth", "header"], help="Auth method")
+    mcp_add_p.add_argument("--preset", help="Known MCP preset name")
+    mcp_add_p.add_argument(
+        "--env",
+        nargs="*",
+        default=[],
+        help="Environment variables for stdio servers (KEY=VALUE)",
+    )
+
+    mcp_rm_p = mcp_sub.add_parser("remove", aliases=["rm"], help="Remove an MCP server")
+    mcp_rm_p.add_argument("name", help="Server name to remove")
+
+    mcp_sub.add_parser("list", aliases=["ls"], help="List configured MCP servers")
+
+    mcp_test_p = mcp_sub.add_parser("test", help="Test MCP server connection")
+    mcp_test_p.add_argument("name", help="Server name to test")
+
+    mcp_cfg_p = mcp_sub.add_parser(
+        "configure", aliases=["config"], help="Toggle tool selection"
+    )
+    mcp_cfg_p.add_argument("name", help="Server name to configure")
+
+    mcp_login_p = mcp_sub.add_parser(
+        "login",
+        help="Force re-authentication for an OAuth-based MCP server",
+    )
+    mcp_login_p.add_argument("name", help="Server name to re-authenticate")
+
+
+    mcp_parser.set_defaults(func=mcp_command)
+
+    print(mcp_add_p)
+if __name__ == "__main__":
+    main()
