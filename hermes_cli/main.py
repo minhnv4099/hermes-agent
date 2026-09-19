@@ -12067,10 +12067,20 @@ def main():
     sessions_export.add_argument("--session-id", help="Export a specific session")
 
     sessions_delete = sessions_subparsers.add_parser(
-        "delete", help="Delete a specific session"
+        "delete", help="Delete session(s)."
     )
     sessions_delete.add_argument("session_id", help="Session ID to delete")
     sessions_delete.add_argument(
+        "--yes", "-y", action="store_true", help="Skip confirmation"
+    )
+
+    sessions_clear = sessions_subparsers.add_parser(
+        "clear", help="Clear sessions of a source."
+    )
+    sessions_clear.add_argument(
+        "--source", help="Filter by source (cli, telegram, discord, etc.)"
+    )
+    sessions_clear.add_argument(
         "--yes", "-y", action="store_true", help="Skip confirmation"
     )
 
@@ -12260,21 +12270,42 @@ def main():
                     print(f"Exported {len(sessions)} sessions to {args.output}")
 
         elif action == "delete":
-            resolved_session_id = db.resolve_session_id(args.session_id)
-            if not resolved_session_id:
-                print(f"Session '{args.session_id}' not found.")
+            resolved_session_ids = args.session_id.split(",") or [args.session_id]
+
+            for resolved_session_id in resolved_session_ids:
+                resolved_session_id = db.resolve_session_id(resolved_session_id)
+                if not resolved_session_id:
+                    print(f"Session '{args.session_id}' not found.")
+                    continue
+                if not args.yes:
+                    if not _confirm_prompt(
+                        f"Delete session '{resolved_session_id}' and all its messages? [y/N]: "
+                    ):
+                        print("Cancelled.")
+                        continue
+                sessions_dir = get_hermes_home() / "sessions"
+                if db.delete_session(resolved_session_id, sessions_dir=sessions_dir):
+                    print(f"Deleted session '{resolved_session_id}'.")
+                else:
+                    print(f"Session '{args.session_id}' not found.")
+
+        elif action == "clear":
+            if not args.source:
+                print("'source' is required when clearing.")
                 return
+
+            sessions_dir = get_hermes_home() / "sessions"
             if not args.yes:
                 if not _confirm_prompt(
-                    f"Delete session '{resolved_session_id}' and all its messages? [y/N] "
+                    f"Delete all sessions from source {args.source!r}? [y/N] "
                 ):
                     print("Cancelled.")
                     return
-            sessions_dir = get_hermes_home() / "sessions"
-            if db.delete_session(resolved_session_id, sessions_dir=sessions_dir):
-                print(f"Deleted session '{resolved_session_id}'.")
-            else:
-                print(f"Session '{args.session_id}' not found.")
+            count = db.clear_source(
+                source=args.source, sessions_dir=sessions_dir
+            )
+
+            print(f"Cleared {count} sessions from {args.source}.")
 
         elif action == "prune":
             days = args.older_than

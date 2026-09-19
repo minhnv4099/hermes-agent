@@ -3968,6 +3968,46 @@ class SessionDB:
             )
             return cursor.fetchone()[0]
 
+    def clear_source(
+        self,
+        source: str,
+        sessions_dir: Optional[Path] = None,
+    ) -> int:
+        """Delete sessions of a source."""
+        removed_ids: list[str] = []
+
+        def _do(conn):
+            cursor = conn.execute(
+                """SELECT id FROM sessions
+                   WHERE source = ?""",
+                (source, ),
+            )
+
+            session_ids = {row["id"] for row in cursor.fetchall()}
+
+            if not session_ids:
+                return 0
+
+            # Orphan any sessions whose parent is about to be deleted
+            placeholders = ",".join("?" * len(session_ids))
+            conn.execute(
+                f"UPDATE sessions SET parent_session_id = NULL "
+                f"WHERE parent_session_id IN ({placeholders})",
+                list(session_ids),
+            )
+
+            for sid in session_ids:
+                conn.execute("DELETE FROM messages WHERE session_id = ?", (sid,))
+                conn.execute("DELETE FROM sessions WHERE id = ?", (sid,))
+                removed_ids.append(sid)
+            return len(session_ids)
+
+        count = self._execute_write(_do)
+        # Clean up on-disk files outside the DB transaction
+        for sid in removed_ids:
+            self._remove_session_files(sessions_dir, sid)
+        return count
+
     def delete_empty_sessions(
         self,
         sessions_dir: Optional[Path] = None,

@@ -16,6 +16,7 @@ from typing import Any
 
 from utils import safe_json_loads
 from agent.tool_result_classification import file_mutation_result_landed
+from tools.registry import registry
 
 # ANSI escape codes for coloring tool failure indicators
 _RED = "\033[31m"
@@ -1064,7 +1065,7 @@ def get_cute_tool_message(
         return _wrap(f"┊ 🔀 delegate  {_trunc(args.get('goal', ''), 35)}  {dur}")
 
     preview = build_tool_preview(tool_name, args) or ""
-    return _wrap(f"┊ ⚡ {tool_name[:9]:9} {_trunc(preview, 35)}  {dur}")
+    return _wrap(f"┊ {registry.get_emoji(name=tool_name)} {tool_name[:9]:9} {_trunc(preview, 35)}  {dur}")
 
 
 # =========================================================================

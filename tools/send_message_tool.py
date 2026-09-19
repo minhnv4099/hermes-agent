@@ -290,8 +290,8 @@ def _handle_react(args, remove=False):
 
 def _handle_send(args):
     """Send a message to a platform target."""
-    target = args.get("target", "")
-    message = args.get("message", "")
+    target: str = args.get("target", "")
+    message: str = args.get("message", "")
     if not target or not message:
         return tool_error("Both 'target' and 'message' are required when action='send'")
 
